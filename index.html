@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vince kawaï — Comment ça marche</title>
+<style>
+:root{--ink:#1f3d7a;--blue:#6fb1ff;color-scheme:light dark}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;background:#0d1b33;overflow:hidden;font-family:"Baloo 2","Trebuchet MS",system-ui,sans-serif}
+#frame{position:fixed;inset:0;overflow:hidden}
+#stage{position:absolute;inset:0;will-change:transform}
+.sc{position:absolute;inset:-20%;display:none;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:20%;color:var(--ink)}
+.sc.on{display:flex}
+svg.i{fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
+.bdg{background:#fff;border-radius:99px;padding:.4em 1.1em;font-weight:800;font-size:clamp(14px,3.2vmin,30px);box-shadow:0 .4vmin 0 var(--ink);animation:pop .5s both}
+.ring{width:clamp(130px,42vmin,440px);height:clamp(130px,42vmin,440px);border-radius:50%;background:#ffffffb0;border:.6vmin solid var(--ink);display:flex;align-items:center;justify-content:center;margin:.5em 0;animation:boing .7s both;box-shadow:0 1.2vmin 0 #1f3d7a33}
+.ring svg{width:62%;height:62%;stroke-width:2.6}
+h1{font-size:clamp(34px,10vmin,120px);line-height:1;font-weight:900;-webkit-text-stroke:.35vmin #fff;paint-order:stroke fill;animation:slam .45s .15s both}
+p{font-size:clamp(18px,4.6vmin,52px);font-weight:800;margin-top:.5em;min-height:1.3em;background:#ffffffb0;border-radius:.6em;padding:.2em .7em}
+.ic{display:flex;gap:2.5vmin;margin-top:2vmin}
+.ic svg{width:clamp(28px,8vmin,90px);height:clamp(28px,8vmin,90px);animation:pop .4s both}
+.sp{position:absolute;width:5vmin;height:5vmin;color:#fff;animation:fl 3.2s linear infinite;opacity:.9}
+.sp svg{width:100%;height:100%;fill:currentColor;stroke:none}
+@keyframes pop{from{transform:scale(0) rotate(-20deg)}to{transform:none}}
+@keyframes boing{0%{transform:scale(0) rotate(-30deg)}60%{transform:scale(1.2) rotate(6deg)}100%{transform:none}}
+@keyframes slam{from{transform:scale(3);opacity:0}to{transform:none;opacity:1}}
+@keyframes fl{from{transform:translateY(110vh) rotate(0)}to{transform:translateY(-20vh) rotate(360deg)}}
+#fl{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+#bar{position:fixed;left:0;bottom:0;height:1.2vmin;background:var(--blue);width:0;z-index:5}
+#ui{position:fixed;inset:0;z-index:9;display:flex;align-items:center;justify-content:center;background:#0d1b33cc}
+#ui button{font:inherit;font-weight:900;font-size:clamp(20px,5vmin,48px);padding:.6em 1.4em;border:0;border-radius:99px;background:var(--blue);color:#fff;box-shadow:0 .8vmin 0 #3b78c9;cursor:pointer}
+#t{position:fixed;top:max(1.5vmin,env(safe-area-inset-top));right:2vmin;z-index:5;color:#fff;font-weight:800;font-size:2.4vmin}
+</style></head><body>
+<div id="frame"><div id="stage"></div><div id="fl"></div></div>
+<div id="bar"></div><div id="t">0:00 / 1:00</div>
+<div id="ui"><button id="go">▶ Lancer la vidéo</button></div>
+<script>
+const P={
+candle:'<rect x="20" y="28" width="24" height="28" rx="5"/><path d="M32 28v-5"/><path d="M32 8c6 6 6 11 0 15-6-4-6-9 0-15z"/>',
+phone:'<rect x="18" y="6" width="28" height="52" rx="6"/><path d="M28 12h8M26 32l5 5 8-11"/>',
+flask:'<path d="M26 6h12M28 6v18L12 52a4 4 0 0 0 4 6h32a4 4 0 0 0 4-6L36 24V6M20 42h24"/>',
+flame:'<path d="M32 6c4 10 16 16 16 31a16 16 0 0 1-32 0c0-8 5-11 7-17 3 3 4 6 4 9 4-5 5-12 5-23z"/>',
+jar:'<path d="M16 24h32v26a6 6 0 0 1-6 6H22a6 6 0 0 1-6-6zM14 24h36M32 3c5 6 5 10 0 13-5-3-5-7 0-13z"/>',
+check:'<circle cx="32" cy="32" r="24"/><path d="M21 33l8 8 15-17"/>',
+gift:'<rect x="8" y="24" width="48" height="12" rx="2"/><path d="M12 36v20h40V36M32 24v32M32 24c-8 0-14-4-12-10s12 0 12 10c0-10 10-16 12-10s-4 10-12 10z"/>',
+truck:'<path d="M4 16h34v28H4zM38 24h12l10 10v10H38z"/><circle cx="16" cy="48" r="5"/><circle cx="48" cy="48" r="5"/>',
+heart:'<path d="M32 54C8 38 10 16 24 16c5 0 8 3 8 6 0-3 3-6 8-6 14 0 16 22-8 38z"/>',
+star:'<path d="M32 6l7 17 18 2-14 12 5 18-16-10-16 10 5-18L7 25l18-2z"/>',
+spark:'<path d="M32 6c2 14 6 18 20 20-14 2-18 6-20 20-2-14-6-18-20-20 14-2 18-6 20-20z"/>',
+drop:'<path d="M32 6C46 24 50 32 50 40a18 18 0 0 1-36 0c0-8 4-16 18-34z"/>',
+bell:'<path d="M16 46h32l-4-6V26a12 12 0 0 0-24 0v14zM28 52a4 4 0 0 0 8 0"/>',
+box:'<path d="M8 20L32 8l24 12v26L32 58 8 46zM8 20l24 12 24-12M32 32v26"/>',
+clock:'<circle cx="32" cy="32" r="24"/><path d="M32 18v14l9 6"/>',
+cart:'<path d="M6 10h8l7 30h30l5-22H18"/><circle cx="26" cy="52" r="4"/><circle cx="46" cy="52" r="4"/>',
+temp:'<path d="M26 10a6 6 0 0 1 12 0v26a12 12 0 1 1-12 0z"/><path d="M32 20v26"/>',
+ribbon:'<path d="M32 30c-10-14-22-4-14 4 4 4 14 0 14-4 0 4 10 8 14 4 8-8-4-18-14-4zM28 36l-6 20M36 36l6 20"/>',
+search:'<circle cx="28" cy="28" r="18"/><path d="M42 42l16 16"/>',
+rainbow:'<path d="M8 50a24 24 0 0 1 48 0M18 50a14 14 0 0 1 28 0"/>',
+bolt:'<path d="M36 4L14 36h16l-4 24 24-34H34z"/>'};
+const I=n=>`<svg class="i" viewBox="0 0 64 64">${P[n]}</svg>`;
+const S=[
+{d:7,bg:"#dff1ff,#b9d6ff",b:"Bienvenue",e:"candle",h:"Vince kawaï",p:"Ta commande, livrée en 1 jour !",i:["drop","star","heart","spark"]},
+{d:8,bg:"#e6f4ff,#c4ddff",b:"Étape 1/7",e:"phone",h:"Commande reçue !",p:"Ding ! Une nouvelle commande arrive",i:["cart","bell","heart"]},
+{d:9,bg:"#d9eeff,#cfe0ff",b:"Étape 2/7",e:"flask",h:"Choix du parfum",p:"Vanille, fraise, pêche… on prépare tout",i:["drop","spark","star"]},
+{d:9,bg:"#cfe6ff,#b4cdf7",b:"Étape 3/7",e:"flame",h:"On fait fondre la cire",p:"Doucement, à la bonne température",i:["temp","clock","drop"]},
+{d:8,bg:"#d6f0ff,#d0d9ff",b:"Étape 4/7",e:"jar",h:"On verse & on décore",p:"Moule kawaï, couleurs pastel, petits détails",i:["ribbon","star","rainbow"]},
+{d:7,bg:"#d3f3f5,#c3dcff",b:"Étape 5/7",e:"check",h:"Refroidir & contrôler",p:"Chaque bougie est vérifiée avec soin",i:["search","check","star"]},
+{d:7,bg:"#dcebff,#c6e4ff",b:"Étape 6/7",e:"gift",h:"Emballage cadeau",p:"Boîte, ruban, petit mot doux",i:["ribbon","heart","box"]},
+{d:5,bg:"#c6dcff,#e1f0ff",b:"Étape 7/7",e:"truck",h:"C’est parti !",p:"Colis expédié le jour même",i:["box","bolt","clock"]}
+];
+const st=document.getElementById('stage'),fl=document.getElementById('fl'),bar=document.getElementById('bar'),tt=document.getElementById('t');
+const T=S.reduce((a,s)=>a+s.d,0);let starts=[],acc=0;
+S.forEach((s,k)=>{starts.push(acc);acc+=s.d;
+const d=document.createElement('div');d.className='sc';const[a,b]=s.bg.split(',');d.style.background=`radial-gradient(circle at 30% 20%,${a},${b})`;
+let sp='';for(let j=0;j<7;j++)sp+=`<span class="sp" style="left:${j*15}%;animation-delay:${-j*.45}s">${`<svg viewBox="0 0 64 64">${P.spark}</svg>`}</span>`;
+d.innerHTML=sp+`<div class="bdg">${s.b}</div><div class="ring">${I(s.e)}</div><h1>${s.h}</h1><p></p><div class="ic">${s.i.map((x,n)=>`<span style="animation-delay:${.5+n*.15}s;display:flex">${I(x)}</span>`).join('')}</div>`;
+st.appendChild(d)});
+const sc=[...st.children],ease=x=>1-Math.pow(1-x,3);let cur=-1,t0=0,run=false;
+function frame(now){
+ if(!run)return;const t=(now-t0)/1000;
+ if(t>=T){run=false;bar.style.width='100%';document.getElementById('go').textContent='↻ Revoir';document.getElementById('ui').style.display='flex';return}
+ let k=starts.findIndex((s,n)=>t>=s&&(n==S.length-1||t<starts[n+1]));const p=(t-starts[k])/S[k].d;
+ if(k!==cur){cur=k;sc.forEach((e,n)=>e.classList.toggle('on',n===k));sc[k].querySelector('p').dataset.txt=S[k].p;
+  sc[k].querySelectorAll('.bdg,.ring,h1,.ic span').forEach(e=>{e.style.animation='none';e.offsetWidth;e.style.animation=''})}
+ const pe=sc[k].querySelector('p'),n=Math.floor(Math.min(1,Math.max(0,(p-.12)/.3))*pe.dataset.txt.length);pe.textContent=pe.dataset.txt.slice(0,n);
+ let s=p<.12?2.4-1.4*ease(p/.12):1+.14*p;if(p>.9)s+=3.5*ease((p-.9)/.1);
+ const r=Math.sin(t*2.2)*1.8+(k%2?2:-2)*(1-ease(Math.min(1,p*4))),x=Math.sin(t*1.3+k)*2.2,y=Math.cos(t*1.7)*1.6;
+ st.style.transform=`translate(${x}%,${y}%) rotate(${r}deg) scale(${s})`;
+ fl.style.opacity=p<.04?1-p/.04:p>.96?(p-.96)/.04:0;bar.style.width=(t/T*100)+'%';
+ tt.textContent=`0:${String(Math.floor(t)).padStart(2,'0')} / 1:00`;requestAnimationFrame(frame)}
+document.getElementById('go').onclick=()=>{document.getElementById('ui').style.display='none';cur=-1;run=true;t0=performance.now();requestAnimationFrame(frame)};
+</script></body></html>
